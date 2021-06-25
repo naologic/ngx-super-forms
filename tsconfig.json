@@ -6,6 +6,10 @@
       "@naologic/forms": [
         "dist/naologic/forms/naologic-forms",
         "dist/naologic/forms"
+      ],
+      "@naologic/pipes": [
+        "dist/naologic/pipes/naologic-pipes",
+        "dist/naologic/pipes"
       ]
     },
     "baseUrl": "./",

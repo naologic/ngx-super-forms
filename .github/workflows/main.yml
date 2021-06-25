@@ -14,5 +14,6 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
       - run: npm install
       - run: npm run publish:forms
+      - run: npm run publish:pipes
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
