@@ -23,6 +23,8 @@ Publishing is done automatically when you create a new release or you can do it 
 npm run publish:forms
 ```
 
+### License
+![GitHub](https://img.shields.io/github/license/mashape/apistatus.svg)
 
 ## Samples
 
