@@ -302,12 +302,18 @@ export class NaoFormGroup<T = any> extends FormGroup {
     });
   }
 
-
   /**
-   * Get value of this shit
+   * Disable the form group
    */
   public disable(opts?: NaoAbstractControlOptions): any {
     super.disable(opts);
+  }
+
+  /**
+   * Enable the form group
+   */
+  public enable(opts?: NaoAbstractControlOptions): any {
+    super.enable(opts);
   }
 
   /**
