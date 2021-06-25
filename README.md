@@ -1,27 +1,21 @@
-# NaologicForms
+# Angular Super Forms
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 12.0.5.
+This library adds some much-needed features on top of Angular Forms and Reactive forms, to make it more developer friendly.
 
-## Development server
+## :bulb: Features
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
+- :racehorse: get pristine only or dirty only values
+- :zap: get typed via `getAsNaoFormArray`, `getAsNaoFormControl`, `getAsNaoFormGroup`
+- :hammer: patch at any level `patchDeep()`
+- :bug: find nested errors with `getAllErrors()` or get `getAllErrorsFlat()` full paths with errors
 
-## Code scaffolding
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+## Samples
 
-## Build
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
+## Naologic no-code platform
+_Naologic offers a completely visual, no code application platform that helps small- and medium-sized businesses build or 
+customize their own marketing, sales, operations, HR, training or purchasing applications. All without a single line of code_
 
-## Running unit tests
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
-
-## Running end-to-end tests
-
-Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities.
-
-## Further help
-
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.
+_Built with :heart: and :robots: by [Naologic no-code](https://naologic.com/bob-builder)_
