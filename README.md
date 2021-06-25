@@ -2,6 +2,10 @@
 
 This library adds some much-needed features on top of Angular Forms and Reactive forms, to make it more developer friendly.
 
+[![Known Vulnerabilities](https://snyk.io/test/github/naologic/ngx-super-forms/badge.svg)]
+
+
+
 ## :bulb: Features
 
 - :racehorse: get pristine only or dirty only values
@@ -34,4 +38,4 @@ _Naologic offers a completely visual, no code application platform that helps sm
 customize their own marketing, sales, operations, HR, training or purchasing applications. All without a single line of code_
 
 
-_Built with :heart: and :robots: by [Naologic no-code](https://naologic.com/bob-builder)_
+_Built with :heart: and :robot: by [Naologic no-code](https://naologic.com/bob-builder)_
