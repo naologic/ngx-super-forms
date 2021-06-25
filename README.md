@@ -2,7 +2,7 @@
 
 This library adds some much-needed features on top of Angular Forms and Reactive forms, to make it more developer friendly.
 
-[![Known Vulnerabilities](https://snyk.io/test/github/naologic/ngx-super-forms/badge.svg)]
+![Known Vulnerabilities](https://snyk.io/test/github/naologic/ngx-super-forms/badge.svg)
 
 
 
