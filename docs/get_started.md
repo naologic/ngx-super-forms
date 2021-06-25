@@ -1,4 +1,4 @@
-# :fireworks: Alexandria 
+# :fireworks: ngx-super-forms 
 [![Build Status](https://travis-ci.org/naologic/ngx-super-forms.svg?branch=master)](https://travis-ci.org/naologic/ngx-super-forms)
 [![Known Vulnerabilities](https://snyk.io/test/github/naologic/ngx-super-forms/badge.svg?targetFile=package.json)](https://snyk.io/test/github/naologic/ngx-super-forms?targetFile=package.json)
 

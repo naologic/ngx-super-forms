@@ -1,4 +1,4 @@
-# @naologic/forms from :fireworks: [Alexandria Library](https://github.com/naologic/ngx-super-forms)
+# @naologic/forms from :fireworks: [ngx-super-forms Library](https://github.com/naologic/ngx-super-forms)
 
 __
 
