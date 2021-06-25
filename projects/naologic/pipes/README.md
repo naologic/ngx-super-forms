@@ -17,7 +17,7 @@ This library adds some much-needed features on top of Angular Forms and Reactive
 ## Install
 
 ```bash
-npm install --save @naologic/forms
+npm install --save @naologic/forms @naologic/pipes
 ```
 
 ### Publish
