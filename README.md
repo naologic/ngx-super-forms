@@ -10,6 +10,20 @@ This library adds some much-needed features on top of Angular Forms and Reactive
 - :bug: find nested errors with `getAllErrors()` or get `getAllErrorsFlat()` full paths with errors
 
 
+## Install
+
+```bash
+npm install --save @naologic/forms
+```
+
+### Publish
+Publishing is done automatically when you create a new release or you can do it manually:
+
+```bash
+npm run publish:forms
+```
+
+
 ## Samples
 
 
