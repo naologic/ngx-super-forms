@@ -1,12 +1,14 @@
 {
   "name": "naologic-forms",
-  "version": "0.0.0",
+  "version": "2.0.0",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
+    "prod": "ng build --configuration=production",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "publish:forms": "rm -rf dist/naologic/forms && ng build @naologic/forms --configuration=production && npm pack"
   },
   "private": true,
   "dependencies": {
