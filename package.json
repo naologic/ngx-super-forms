@@ -1,10 +1,10 @@
 {
   "name": "@naologic/forms",
-  "version": "2.0.4",
+  "version": "2.1.0",
   "description": "A collection of Nao public libraries",
   "author": "Gabriel",
   "url": "https://naologic.com",
-  "copyright": "Copyright 2018 NaoLogic",
+  "copyright": "Copyright 2021 NaoLogic",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
@@ -12,12 +12,15 @@
     "prod": "ng build --configuration=production",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "publish:forms": "rm -rf dist/naologic/forms && ng build @naologic/forms --configuration=production && npm pack && npm publish --scope=naologic --access public"
+    "copy:forms": "rm -rf dist/naologic/forms && cp README.md projects/naologic/forms/  && cp LICENSE.md projects/naologic/forms/ ",
+    "build:forms": "npm run copy:forms && ng build @naologic/forms --configuration=production",
+    "publish:forms": "npm run build:forms && cd dist/naologic/forms/ && npm pack && npm publish --scope=naologic --access public"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/naologic/ngx-super-forms.git"
   },
+  "public": true,
   "dependencies": {
     "@angular/animations": "~12.0.5",
     "@angular/common": "~12.0.5",

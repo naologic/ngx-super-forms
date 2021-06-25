@@ -1,24 +1,41 @@
-# Forms
+# Angular Super Forms
 
-This library was generated with [Angular CLI](https://github.com/angular/angular-cli) version 12.0.5.
+This library adds some much-needed features on top of Angular Forms and Reactive forms, to make it more developer friendly.
 
-## Code scaffolding
+![Known Vulnerabilities](https://snyk.io/test/github/naologic/ngx-super-forms/badge.svg)
 
-Run `ng generate component component-name --project forms` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module --project forms`.
-> Note: Don't forget to add `--project forms` or else it will be added to the default project in your `angular.json` file. 
 
-## Build
 
-Run `ng build forms` to build the project. The build artifacts will be stored in the `dist/` directory.
+## :bulb: Features
 
-## Publishing
+- :racehorse: get pristine only or dirty only values
+- :zap: get typed via `getAsNaoFormArray`, `getAsNaoFormControl`, `getAsNaoFormGroup`
+- :hammer: patch at any level `patchDeep()`
+- :bug: find nested errors with `getAllErrors()` or get `getAllErrorsFlat()` full paths with errors
 
-After building your library with `ng build forms`, go to the dist folder `cd dist/forms` and run `npm publish`.
 
-## Running unit tests
+## Install
 
-Run `ng test forms` to execute the unit tests via [Karma](https://karma-runner.github.io).
+```bash
+npm install --save @naologic/forms
+```
 
-## Further help
+### Publish
+Publishing is done automatically when you create a new release or you can do it manually:
 
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.
+```bash
+npm run publish:forms
+```
+
+### License
+![GitHub](https://img.shields.io/github/license/mashape/apistatus.svg)
+
+## Samples
+
+
+## Naologic no-code platform
+_Naologic offers a completely visual, no code application platform that helps small- and medium-sized businesses build or 
+customize their own marketing, sales, operations, HR, training or purchasing applications. All without a single line of code_
+
+
+_Built with :heart: and :robot: by [Naologic no-code](https://naologic.com/bob-builder)_
