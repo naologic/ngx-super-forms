@@ -14,10 +14,10 @@
     "test": "ng test",
     "copy:forms": "rm -rf dist/naologic/forms && cp README.md projects/naologic/forms/  && cp LICENSE.md projects/naologic/forms/ ",
     "build:forms": "npm run copy:forms && ng build @naologic/forms --configuration=production && cd dist/naologic/forms/ && npm pack",
-    "publish:forms": "npm run build:forms && cd dist/naologic/forms/ && npm publish --scope=naologic --access public",
+    "publish:forms": "npm run build:forms && cd dist/naologic/forms/ && npm publish --scope=@naologic --access public",
     "copy:pipes": "rm -rf dist/naologic/pipes && cp README.md projects/naologic/pipes/  && cp LICENSE.md projects/naologic/pipes/ ",
     "build:pipes": "npm run copy:pipes && ng build @naologic/pipes --configuration=production && cd dist/naologic/pipes/ && npm pack ",
-    "publish:pipes": "npm run build:pipes && cd dist/naologic/pipes/ && npm publish --scope=naologic --access public",
+    "publish:pipes": "npm run build:pipes && cd dist/naologic/pipes/ && npm publish --scope=@naologic --access public",
     "publish": "npm run publish:forms && npm run publish:pipes"
   },
   "repository": {
