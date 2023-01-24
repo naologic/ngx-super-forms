@@ -3,10 +3,16 @@ import { AsyncValidatorFn, ValidatorFn} from '@angular/forms';
 import { NaoFormOptions } from './nao-form-options';
 import { cloneAbstractControl, NaoFormStatic } from './nao-form-static.class';
 import { BehaviorSubject } from 'rxjs';
-import { isPlainObject, pick, merge } from 'lodash';
+import {isPlainObject, pick, merge, map, groupBy} from 'lodash';
+import {NaoMessageNamespace} from "./nao-form.interface";
 
 export class NaoFormControl extends FormControl {
   public metadata$ = new BehaviorSubject<any>(null);
+  /**
+   * Nao messages
+   */
+  private naoMessages$ = new BehaviorSubject<NaoMessageNamespace.NaoMessage[]>([]);
+
   constructor(
     formState?: any,
     options?: ValidatorFn | ValidatorFn[] | NaoFormOptions | null,
@@ -19,6 +25,150 @@ export class NaoFormControl extends FormControl {
       this.setMetadata(meta);
     }
   }
+
+
+  /**
+   * When we what to set messages to a control from BE, we would use the naoMessages.
+   * They are set nested based on dataPointer and by default we clear any other messages that you have
+   *
+   * @Example:
+   *  const data = {
+   *           messages: [
+   *              { type: 'error-message', dataPointer: 'data.orderLines', data: { errorType: 'duplicated' }  },
+   *              { type: 'error-message', dataPointer: '', data: { errorId: 'invalid' }  },
+   *          ],
+   *          options: {
+   *              clearOtherMessages: true
+   *          }
+   *     }
+   *
+   *   control.setNaoMessages(data);
+   *      > Would clear other messages
+   *      - This would set an error message with an errorId: 'invalid' to the current control
+   *      - This would set an error message to the 'data.orderLines' with errorType: 'duplicated'
+   *
+   *
+   *    const data = {
+   *           messages: [
+   *              { type: 'info-message', dataPointer: 'data.orderLines', data: { errorType: 'Info message' }  },
+   *              { type: 'notification-message', dataPointer: '', data: { text: 'Notification message' }  },
+   *          ],
+   *          options: {
+   *              clearOtherMessages: false
+   *          }
+   *     }
+   *
+   *   control.setNaoMessages(data);
+   *      - This would set and info message to orderLines
+   *      - This would set an notification message to the current control
+   *
+   *   @Warning: All the nao messages from before would still be available because of options.clearOtherMessages = false
+   */
+  public setNaoMessages(data: NaoMessageNamespace.NaoMessagesInterface): NaoFormControl {
+    // -->Set: options
+    const opt$: NaoMessageNamespace.Options = data?.options || {clearOtherMessages: true};
+
+    // -->Check: if we need to clear all the messages
+    if (opt$.clearOtherMessages) {
+      // -->Clear: messages
+      this.clearNaoMessages({clearChildren: true});
+    }
+
+    // -->Iterate: over messages
+    if (Array.isArray(data?.messages) && data?.messages?.length) {
+      // -->Group: the messages based on data pointer
+      let messagesGrouped: { dataPointer: string, messages: NaoMessageNamespace.NaoMessage[] }[] =
+        map(groupBy(data.messages, 'dataPointer'), (value, key) => ({
+          dataPointer: key,
+          messages: value || []
+        }));
+
+
+      messagesGrouped.map((el) => {
+        // -->Clear: data pointers from messages
+        const messages = el.messages?.map((item) => {
+          delete item.dataPointer;
+          return item;
+        }) || [];
+
+        if (!el?.dataPointer) {
+          // -->Set: the message to this
+          this.naoMessages$.next([...this.naoMessages$.getValue(), ...messages]);
+        } else {
+          // -->We: should never have any
+          throw new Error(`You can't set a message to a NaoFormControl with a dataPointer`);
+        }
+      });
+    }
+
+    return this;
+  }
+
+
+  /**
+   * Get all the nao messages for this formGroup based on types
+   *
+   * @example:
+   *       control.getNaoMessages();
+   *       control.getNaoMessages('error-message');
+   *       control.getNaoMessages(["info-message", "notification-message"]);
+   */
+  public getNaoMessages(data?: NaoMessageNamespace.Type[] | NaoMessageNamespace.Type): NaoMessageNamespace.NaoMessage[] {
+    // -->Set: the types we need to filter
+    let types: NaoMessageNamespace.Type[] = [];
+    if (Array.isArray(data) && data.length) {
+      types.push(...data);
+    } else if (typeof data === "string") {
+      types.push(data);
+    } else {
+      // -->Set: all types;
+      types = [...NaoMessageNamespace.TypeList];
+    }
+
+    // -->Filter: messages based on types
+    return this.naoMessages$.getValue()?.filter(f => types.includes(f?.type)) || [];
+  }
+
+
+  /**
+   * Get: Nao error messages
+   *
+   * This will retrieve all the messages of type 'error-message'
+   */
+  public getNaoErrorMessages(): NaoMessageNamespace.NaoMessage[] {
+    return this.naoMessages$.getValue()?.filter(f => "error-message" === f?.type) || [];
+  }
+
+
+  /**
+   * Get: Nao info messages
+   *
+   * This will retrieve all the messages of type 'info-message'
+   */
+  public getNaoInfoMessages(): NaoMessageNamespace.NaoMessage[] {
+    return this.naoMessages$.getValue()?.filter(f => "info-message" === f?.type) || [];
+  }
+
+
+  /**
+   * Get: Nao notification messages
+   *
+   * This will retrieve all the messages of type 'notification-message'
+   */
+  public getNaoNotificationMessages(): NaoMessageNamespace.NaoMessage[] {
+    return this.naoMessages$.getValue()?.filter(f => "notification-message" === f?.type) || [];
+  }
+
+
+  /**
+   * Clear all the nao messages from the current control
+   */
+  public clearNaoMessages(opt?: { clearChildren: boolean }): NaoFormControl {
+    this.naoMessages$.next([]);
+
+    return this;
+  }
+
 
   /**
    * Get metadata

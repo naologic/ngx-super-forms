@@ -1,12 +1,16 @@
-import { AbstractControl, FormGroup } from '@angular/forms';
-import { AsyncValidatorFn, ValidatorFn } from '@angular/forms';
-import { isArray, mapValues, merge, isPlainObject, set, get, pick } from 'lodash';
-import { callNativeMarkAsFunction, cloneAbstractControl, getValuesByMarkedAs, NaoFormStatic } from './nao-form-static.class';
-import { NaoFormArray } from './nao-form-array.class';
-import { NaoFormOptions } from './nao-form-options';
-import { NaoAbstractControlOptions } from './nao-form.interface';
-import { NaoFormControl } from './nao-form-control.class';
-import { BehaviorSubject } from 'rxjs';
+import {AbstractControl, AsyncValidatorFn, FormGroup, ValidatorFn} from '@angular/forms';
+import {get, groupBy, isArray, isPlainObject, map, mapValues, merge, pick, set} from 'lodash';
+import {
+  callNativeMarkAsFunction,
+  cloneAbstractControl,
+  getValuesByMarkedAs,
+  NaoFormStatic
+} from './nao-form-static.class';
+import {NaoFormArray} from './nao-form-array.class';
+import {NaoFormOptions} from './nao-form-options';
+import {NaoAbstractControlOptions, NaoMessageNamespace} from './nao-form.interface';
+import {NaoFormControl} from './nao-form-control.class';
+import {BehaviorSubject} from 'rxjs';
 
 
 export class NaoFormGroup<T = any> extends FormGroup {
@@ -15,6 +19,11 @@ export class NaoFormGroup<T = any> extends FormGroup {
   private formData: {
     [index: string]: { data: FormData, contentLength: number }
   } = {};
+  /**
+   * Nao messages
+   */
+  private naoMessages$ = new BehaviorSubject<NaoMessageNamespace.NaoMessage[]>([]);
+
   constructor(
     controls: { [key: string]: AbstractControl; },
     options?: ValidatorFn | ValidatorFn[] | NaoFormOptions | null,
@@ -27,6 +36,168 @@ export class NaoFormGroup<T = any> extends FormGroup {
       this.setMetadata(meta);
     }
   }
+
+
+  /**
+   * When we what to set messages to a control from BE, we would use the naoMessages.
+   * They are set nested based on dataPointer and by default we clear any other messages that you have
+   *
+   * @Example:
+   *  const data = {
+   *           messages: [
+   *              { type: 'error-message', dataPointer: 'data.orderLines', data: { errorType: 'duplicated' }  },
+   *              { type: 'error-message', dataPointer: '', data: { errorId: 'invalid' }  },
+   *          ],
+   *          options: {
+   *              clearOtherMessages: true
+   *          }
+   *     }
+   *
+   *   control.setNaoMessages(data);
+   *      > Would clear other messages
+   *      - This would set an error message with an errorId: 'invalid' to the current control
+   *      - This would set an error message to the 'data.orderLines' with errorType: 'duplicated'
+   *
+   *
+   *    const data = {
+   *           messages: [
+   *              { type: 'info-message', dataPointer: 'data.orderLines', data: { errorType: 'Info message' }  },
+   *              { type: 'notification-message', dataPointer: '', data: { text: 'Notification message' }  },
+   *          ],
+   *          options: {
+   *              clearOtherMessages: false
+   *          }
+   *     }
+   *
+   *   control.setNaoMessages(data);
+   *      - This would set and info message to orderLines
+   *      - This would set an notification message to the current control
+   *
+   *   @Warning: All the nao messages from before would still be available because of options.clearOtherMessages = false
+   */
+  public setNaoMessages(data: NaoMessageNamespace.NaoMessagesInterface): NaoFormGroup {
+    // -->Set: options
+    const options: NaoMessageNamespace.Options = data?.options || {clearOtherMessages: true};
+
+    // -->Check: if we need to clear all the messages
+    if (options.clearOtherMessages) {
+      // -->Clear: messages
+      this.clearNaoMessages({clearChildren: true});
+    }
+
+    // -->Iterate: over messages
+    if (Array.isArray(data?.messages) && data?.messages?.length) {
+      // -->Group: the messages based on data pointer
+      let messagesGrouped: { dataPointer: string, messages: NaoMessageNamespace.NaoMessage[] }[] =
+        map(groupBy(data.messages, 'dataPointer'), (value, key) => ({
+          dataPointer: key,
+          messages: value || []
+        }));
+
+
+      messagesGrouped.map((el) => {
+        // -->Clear: data pointers from messages
+        const messages = el.messages?.map((item) => {
+          delete item.dataPointer;
+          return item;
+        }) || [];
+
+        if (!el?.dataPointer) {
+          // -->Set: the message to this
+          this.naoMessages$.next([...this.naoMessages$.getValue(), ...messages]);
+        } else {
+
+          // -->Get: abstract control
+          const abstractControl = this.get(el?.dataPointer);
+          // -->Check: type
+          if (abstractControl instanceof NaoFormGroup || abstractControl instanceof NaoFormArray || abstractControl instanceof NaoFormControl) {
+            // -->Clear: data pointer from messages
+            abstractControl.setNaoMessages({ messages, options });
+          }
+        }
+      });
+    }
+
+    return this;
+  }
+
+
+  /**
+   * Get all the nao messages for this formGroup based on types
+   *
+   * @example:
+   *       control.getNaoMessages();
+   *       control.getNaoMessages('error-message');
+   *       control.getNaoMessages(["info-message", "notification-message"]);
+   */
+  public getNaoMessages(data?: NaoMessageNamespace.Type[] | NaoMessageNamespace.Type): NaoMessageNamespace.NaoMessage[] {
+    // -->Set: the types we need to filter
+    let types: NaoMessageNamespace.Type[] = [];
+    if (Array.isArray(data) && data.length) {
+      types.push(...data);
+    } else if (typeof data === "string") {
+      types.push(data);
+    } else {
+      // -->Set: all types;
+      types = [...NaoMessageNamespace.TypeList];
+    }
+
+    // -->Filter: messages based on types
+    return this.naoMessages$.getValue()?.filter(f => types.includes(f?.type)) || [];
+  }
+
+
+  /**
+   * Get: Nao error messages
+   *
+   * This will retrieve all the messages of type 'error-message'
+   */
+  public getNaoErrorMessages(): NaoMessageNamespace.NaoMessage[] {
+    return this.naoMessages$.getValue()?.filter(f => "error-message" === f?.type) || [];
+  }
+
+
+  /**
+   * Get: Nao info messages
+   *
+   * This will retrieve all the messages of type 'info-message'
+   */
+  public getNaoInfoMessages(): NaoMessageNamespace.NaoMessage[] {
+    return this.naoMessages$.getValue()?.filter(f => "info-message" === f?.type) || [];
+  }
+
+
+  /**
+   * Get: Nao notification messages
+   *
+   * This will retrieve all the messages of type 'notification-message'
+   */
+  public getNaoNotificationMessages(): NaoMessageNamespace.NaoMessage[] {
+    return this.naoMessages$.getValue()?.filter(f => "notification-message" === f?.type) || [];
+  }
+
+
+  /**
+   * Clear all nao messages from this control with optional to clear all the messages from children as well
+   */
+  public clearNaoMessages(opt?: { clearChildren: boolean }): NaoFormGroup {
+    this.naoMessages$.next([]);
+
+    if (opt?.clearChildren) {
+      // -->Iterate: over controls and clear the nao messages
+      Object.keys(this.controls).forEach((key: string) => {
+        // -->Get: abstract control
+        const abstractControl = this.get(key);
+        // -->Check: type
+        if (abstractControl instanceof NaoFormGroup || abstractControl instanceof NaoFormArray || abstractControl instanceof NaoFormControl) {
+          abstractControl.clearNaoMessages(opt);
+        }
+      })
+    }
+
+    return this;
+  }
+
 
   /**
    * Get metadata
@@ -76,7 +247,7 @@ export class NaoFormGroup<T = any> extends FormGroup {
   /**
    * Merge this form with another form
    */
-  public merge(fg: NaoFormGroup, options = { overwrite: true }): void {
+  public merge(fg: NaoFormGroup, options = {overwrite: true}): void {
     if (fg && fg instanceof NaoFormGroup) {
       Object.keys(fg.value).map(k => {
         if (!this.contains(k) || (this.contains(k) && options.overwrite)) {
@@ -195,41 +366,41 @@ export class NaoFormGroup<T = any> extends FormGroup {
   /**
    * Iterates through all the children of the NaoFormGroup, NaoFormArray and calls markAsTouched on all controls;
    * for NaoFormControl it references the native function markAsTouched
-  */
+   */
   public markAllAsTouched(opts?: NaoAbstractControlOptions): void {
-    this.markAs( this, 'touched', opts );
+    this.markAs(this, 'touched', opts);
   }
 
   /**
    * Iterates through all the children of the NaoFormGroup, NaoFormArray and calls markAsUntouched on all controls
    * for NaoFormControl it references the native function markAsUntouched
-  */
+   */
   public markAllAsUntouched(opts?: NaoAbstractControlOptions): void {
-    this.markAs( this, 'untouched', opts );
+    this.markAs(this, 'untouched', opts);
   }
 
   /**
    * Iterates through all the children of the NaoFormGroup, NaoFormArray and calls markAsDirty on all controls
    * for NaoFormControl it references the native function markAsDirty
-  */
+   */
   public markAllAsDirty(opts?: NaoAbstractControlOptions): void {
-    this.markAs( this, 'dirty', opts );
+    this.markAs(this, 'dirty', opts);
   }
 
   /**
    * Iterates through all the children of the NaoFormGroup, NaoFormArray and calls markAsPristine on all controls
    * for NaoFormControl it references the native function markAsPristine
-  */
+   */
   public markAllAsPristine(opts?: NaoAbstractControlOptions): void {
-    this.markAs( this, 'pristine', opts );
+    this.markAs(this, 'pristine', opts);
   }
 
   /**
    * Iterates through all the children of the NaoFormGroup, NaoFormArray and calls markAsPending on all controls
    * for NaoFormControl it references the native function markAsPending
-  */
+   */
   public markAllAsPending(opts?: NaoAbstractControlOptions): void {
-    this.markAs( this, 'pending', opts );
+    this.markAs(this, 'pending', opts);
   }
 
   /**
@@ -419,7 +590,7 @@ export class NaoFormGroup<T = any> extends FormGroup {
     const formData = new FormData();
     const value: any = this.getValue();
 
-    for (const key of Object.keys(value) ) {
+    for (const key of Object.keys(value)) {
       formData.append(key, value[key]);
     }
 
@@ -450,7 +621,7 @@ export class NaoFormGroup<T = any> extends FormGroup {
   public setFormData(path: string, data: any): void {
     // -->Check: the form data
     if (!(this.formData[path] instanceof FormData)) {
-      this.formData[path] = { data: new FormData(), contentLength: 0 };
+      this.formData[path] = {data: new FormData(), contentLength: 0};
     }
 
     // -->Set: data
@@ -475,7 +646,7 @@ export class NaoFormGroup<T = any> extends FormGroup {
    * Resets the FormGroup, marks all descendants are marked pristine and untouched, and the value of all descendants to null.
    */
   public empty(options: { onlySelf?: boolean; emitEvent?: boolean; } = {}): void {
-    return super.reset( {}, options );
+    return super.reset({}, options);
   }
 
   /**
@@ -484,7 +655,7 @@ export class NaoFormGroup<T = any> extends FormGroup {
   public clone(reset = false, formGroupKeys?: string[]): NaoFormGroup {
     const fc = cloneAbstractControl<NaoFormGroup>(this, formGroupKeys, false);
     if (reset) {
-      fc.reset({ onlySelf: false, emitEvent: false });
+      fc.reset({onlySelf: false, emitEvent: false});
     }
     return fc;
   }
@@ -495,7 +666,7 @@ export class NaoFormGroup<T = any> extends FormGroup {
   public cloneExclude(reset = false, formGroupKeys: string[]): NaoFormGroup {
     const fc = cloneAbstractControl<NaoFormGroup>(this, formGroupKeys, true);
     if (reset) {
-      fc.reset({ onlySelf: false, emitEvent: false });
+      fc.reset({onlySelf: false, emitEvent: false});
     }
     return fc;
   }
