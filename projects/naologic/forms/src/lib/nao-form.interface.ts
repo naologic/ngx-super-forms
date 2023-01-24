@@ -72,5 +72,46 @@ export namespace NaoMessageNamespace {
     clearOtherMessages: boolean
   }
 
+
+  /**
+   * Group: NaoMessage by data pointer and merge the messages
+   *    > Clears: the dataPointer from inside the messages
+   */
+  export function groupNaoMessagesByDataPointer(messages: NaoMessage[]): GroupedMessagesInterface[] {
+    return messages
+      .reduce((accumulator: any[], currentValue) => {
+        // -->Check: if there is a grouped with the same data pointer
+        const index = accumulator.findIndex((data: any) => {
+          return data.dataPointer === currentValue.dataPointer;
+        });
+
+        if (index !== -1 && accumulator[index] && Array.isArray(accumulator[index]?.messages)) {
+          // -->Push: message
+          accumulator[index].messages.push(currentValue)
+        } else {
+          accumulator.push({dataPointer: currentValue.dataPointer, messages: [currentValue]});
+        }
+
+        return accumulator;
+      }, [])
+      // -->Clear: data pointers
+      .map(f => {
+        // -->Iterate over messages
+        f.messages = f.messages.map((el: GroupedMessagesInterface) => {
+          delete el.dataPointer;
+          return el
+        })
+        return f;
+      });
+  }
+
+  /**
+   * Interface: for grouped messages
+   */
+  interface GroupedMessagesInterface {
+    dataPointer?: null | string,
+    messages: NaoMessageNamespace.NaoMessage[]
+  }
+
 }
 

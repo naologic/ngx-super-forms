@@ -1,13 +1,16 @@
-import { AbstractControl, FormArray } from '@angular/forms';
-import { AsyncValidatorFn, ValidatorFn } from '@angular/forms';
-import { callNativeMarkAsFunction, cloneAbstractControl, getValuesByMarkedAs, NaoFormStatic } from './nao-form-static.class';
-import { NaoFormGroup } from './nao-form-group.class';
-import { NaoFormOptions } from './nao-form-options';
+import {AbstractControl, AsyncValidatorFn, FormArray, ValidatorFn} from '@angular/forms';
+import {
+  callNativeMarkAsFunction,
+  cloneAbstractControl,
+  getValuesByMarkedAs,
+  NaoFormStatic
+} from './nao-form-static.class';
+import {NaoFormGroup} from './nao-form-group.class';
+import {NaoFormOptions} from './nao-form-options';
 import {NaoAbstractControlOptions, NaoMessageNamespace} from './nao-form.interface';
-import { NaoFormControl } from './nao-form-control.class';
-import {groupBy, isPlainObject, map, merge, pick} from 'lodash';
-import { BehaviorSubject } from 'rxjs';
-
+import {NaoFormControl} from './nao-form-control.class';
+import {isPlainObject, merge, pick} from 'lodash';
+import {BehaviorSubject} from 'rxjs';
 
 
 export class NaoFormArray<T = any> extends FormArray {
@@ -16,6 +19,7 @@ export class NaoFormArray<T = any> extends FormArray {
    * Nao messages
    */
   private naoMessages$ = new BehaviorSubject<NaoMessageNamespace.NaoMessage[]>([]);
+
   constructor(
     controls: AbstractControl[],
     options?: ValidatorFn | ValidatorFn[] | NaoFormOptions | null,
@@ -78,35 +82,43 @@ export class NaoFormArray<T = any> extends FormArray {
 
     // -->Iterate: over messages
     if (Array.isArray(data?.messages) && data?.messages?.length) {
-      // -->Group: the messages based on data pointer
-      let messagesGrouped: { dataPointer: string, messages: NaoMessageNamespace.NaoMessage[] }[] =
-        map(groupBy(data.messages, 'dataPointer'), (value, key) => ({
-          dataPointer: key,
-          messages: value || []
-        }));
+      /**
+       * Set: messages to the current control
+       */
+        // -->Get: messages for current control
+      const currentControlMessages = data.messages.filter(f => !f.dataPointer);
+      if (currentControlMessages.length) {
+        // -->Set: the message to this control
+        this.naoMessages$.next([...this.naoMessages$.getValue(), ...currentControlMessages.map(f => {
+          delete f.dataPointer;
+          return f;
+        })]);
+      }
 
+      /**
+       * Set: messages to the children controls
+       */
+        // -->Get: messages for children controls
+      const childrenControlsMessages = data.messages.filter(f => !!f.dataPointer);
+      if (childrenControlsMessages.length) {
 
-      messagesGrouped.map((el) => {
-        // -->Clear: data pointers from messages
-        const messages = el.messages?.map((item) => {
-          delete item.dataPointer;
-          return item;
-        }) || [];
+        // -->Group: messages by merging the arrays
+        const groupedMessages = NaoMessageNamespace.groupNaoMessagesByDataPointer(childrenControlsMessages);
 
-        if (!el?.dataPointer) {
-          // -->Set: the message to this
-          this.naoMessages$.next([...this.naoMessages$.getValue(), ...messages]);
-        } else {
-
-          // -->Get: abstract control
-          const abstractControl = this.get(el?.dataPointer);
-          // -->Check: type
-          if (abstractControl instanceof NaoFormGroup || abstractControl instanceof NaoFormArray || abstractControl instanceof NaoFormControl) {
-            // -->Clear: data pointer from messages
-            abstractControl.setNaoMessages({ messages, options });
+        // -->Iterate: over grouped messages
+        groupedMessages.map(el => {
+          if (el?.dataPointer) {
+            // -->Get: abstract control
+            const abstractControl = this.get(el?.dataPointer);
+            // -->Check: type
+            if (abstractControl instanceof NaoFormGroup || abstractControl instanceof NaoFormArray || abstractControl instanceof NaoFormControl) {
+              // -->Clear: data pointer from messages
+              abstractControl.setNaoMessages({messages: el.messages, options});
+            }
           }
-        }
-      });
+        })
+
+      }
     }
 
     return this;
@@ -275,7 +287,7 @@ export class NaoFormArray<T = any> extends FormArray {
   /**
    * Merge this form with another form
    */
-  public merge(fa: NaoFormArray, options = { startAt: 0 }): void {
+  public merge(fa: NaoFormArray, options = {startAt: 0}): void {
     if (fa instanceof NaoFormArray) {
       fa.controls.map((c, i) => {
         this.insert(options.startAt + i, c);
@@ -440,7 +452,7 @@ export class NaoFormArray<T = any> extends FormArray {
         .map(i => super.at(i))
         .filter(e => {
           return !!e;
-      }));
+        }));
       return fa.getValue() as Partial<T[]>;
     }
     return [] as Partial<T[]>;
@@ -452,11 +464,11 @@ export class NaoFormArray<T = any> extends FormArray {
    * @param type
    * @param options
    */
-  private markAs(formGroup: NaoFormGroup|NaoFormArray, type: 'touched'|'untouched'|'dirty'|'pristine'|'pending', options?: NaoAbstractControlOptions): void {
+  private markAs(formGroup: NaoFormGroup | NaoFormArray, type: 'touched' | 'untouched' | 'dirty' | 'pristine' | 'pending', options?: NaoAbstractControlOptions): void {
     if (formGroup && Array.isArray(formGroup.controls)) {
       formGroup.controls.map((control) => {
-        if ( control instanceof NaoFormGroup || control instanceof NaoFormArray ) {
-          this.markAs( control, type, options );
+        if (control instanceof NaoFormGroup || control instanceof NaoFormArray) {
+          this.markAs(control, type, options);
         } else {
           callNativeMarkAsFunction(control, type, options);
         }
@@ -467,41 +479,41 @@ export class NaoFormArray<T = any> extends FormArray {
   /**
    * Iterates through all the children of the NaoFormGroup, NaoFormArray and calls markAsTouched on all controls;
    * for NaoFormControl it references the native function markAsTouched
-  */
+   */
   public markAllAsTouched(opts?: NaoAbstractControlOptions): void {
-    this.markAs( this, 'touched', opts );
+    this.markAs(this, 'touched', opts);
   }
 
   /**
    * Iterates through all the children of the NaoFormGroup, NaoFormArray and calls markAsUntouched on all controls
    * for NaoFormControl it references the native function markAsUntouched
-  */
+   */
   public markAllAsUntouched(opts?: NaoAbstractControlOptions): void {
-    this.markAs( this, 'untouched', opts );
+    this.markAs(this, 'untouched', opts);
   }
 
   /**
    * Iterates through all the children of the NaoFormGroup, NaoFormArray and calls markAsDirty on all controls
    * for NaoFormControl it references the native function markAsDirty
-  */
+   */
   public markAllAsDirty(opts?: NaoAbstractControlOptions): void {
-    this.markAs( this, 'dirty', opts );
+    this.markAs(this, 'dirty', opts);
   }
 
   /**
    * Iterates through all the children of the NaoFormGroup, NaoFormArray and calls markAsPristine on all controls
    * for NaoFormControl it references the native function markAsPristine
-  */
+   */
   public markAllAsPristine(opts?: NaoAbstractControlOptions): void {
-    this.markAs( this, 'pristine', opts );
+    this.markAs(this, 'pristine', opts);
   }
 
   /**
    * Iterates through all the children of the NaoFormGroup, NaoFormArray and calls markAsPending on all controls
    * for NaoFormControl it references the native function markAsPending
-  */
+   */
   public markAllAsPending(opts?: NaoAbstractControlOptions): void {
-    this.markAs( this, 'pending', opts );
+    this.markAs(this, 'pending', opts);
   }
 
   /**
@@ -544,7 +556,7 @@ export class NaoFormArray<T = any> extends FormArray {
    */
   public empty(options: { onlySelf?: boolean; emitEvent?: boolean; } = {}): void {
     this.controls = [];
-    return super.reset( [], options );
+    return super.reset([], options);
   }
 
   /**
@@ -601,7 +613,7 @@ export class NaoFormArray<T = any> extends FormArray {
   public clone(reset = false): NaoFormArray {
     const fc = cloneAbstractControl<NaoFormArray>(this);
     if (reset) {
-      fc.reset({ onlySelf: false, emitEvent: false });
+      fc.reset({onlySelf: false, emitEvent: false});
     }
     return fc;
   }

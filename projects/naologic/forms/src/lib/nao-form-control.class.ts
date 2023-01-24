@@ -1,9 +1,9 @@
-import { FormControl } from '@angular/forms';
-import { AsyncValidatorFn, ValidatorFn} from '@angular/forms';
-import { NaoFormOptions } from './nao-form-options';
-import { cloneAbstractControl, NaoFormStatic } from './nao-form-static.class';
-import { BehaviorSubject } from 'rxjs';
-import {isPlainObject, pick, merge, map, groupBy} from 'lodash';
+import {FormControl} from '@angular/forms';
+import {AsyncValidatorFn, ValidatorFn} from '@angular/forms';
+import {NaoFormOptions} from './nao-form-options';
+import {cloneAbstractControl, NaoFormStatic} from './nao-form-static.class';
+import {BehaviorSubject} from 'rxjs';
+import {isPlainObject, pick, merge, map, groupBy, get} from 'lodash';
 import {NaoMessageNamespace} from "./nao-form.interface";
 
 export class NaoFormControl extends FormControl {
@@ -76,29 +76,18 @@ export class NaoFormControl extends FormControl {
 
     // -->Iterate: over messages
     if (Array.isArray(data?.messages) && data?.messages?.length) {
-      // -->Group: the messages based on data pointer
-      let messagesGrouped: { dataPointer: string, messages: NaoMessageNamespace.NaoMessage[] }[] =
-        map(groupBy(data.messages, 'dataPointer'), (value, key) => ({
-          dataPointer: key,
-          messages: value || []
-        }));
-
-
-      messagesGrouped.map((el) => {
-        // -->Clear: data pointers from messages
-        const messages = el.messages?.map((item) => {
-          delete item.dataPointer;
-          return item;
-        }) || [];
-
-        if (!el?.dataPointer) {
-          // -->Set: the message to this
-          this.naoMessages$.next([...this.naoMessages$.getValue(), ...messages]);
-        } else {
-          // -->We: should never have any
-          throw new Error(`You can't set a message to a NaoFormControl with a dataPointer`);
-        }
-      });
+      /**
+       * Set: messages to the current control
+       */
+        // -->Get: messages for current control
+      const currentControlMessages = data.messages.filter(f => !f.dataPointer);
+      if (currentControlMessages.length) {
+        // -->Set: the message to this control
+        this.naoMessages$.next([...this.naoMessages$.getValue(), ...currentControlMessages.map(f => {
+          delete f.dataPointer;
+          return f;
+        })]);
+      }
     }
 
     return this;
@@ -290,7 +279,7 @@ export class NaoFormControl extends FormControl {
   public clone(reset = false): NaoFormControl {
     const fc = cloneAbstractControl<NaoFormControl>(this);
     if (reset) {
-      fc.reset({ onlySelf: false, emitEvent: false });
+      fc.reset({onlySelf: false, emitEvent: false});
     }
     return fc;
   }

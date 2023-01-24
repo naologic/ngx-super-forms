@@ -1,5 +1,5 @@
 import {AbstractControl, AsyncValidatorFn, FormGroup, ValidatorFn} from '@angular/forms';
-import {get, groupBy, isArray, isPlainObject, map, mapValues, merge, pick, set} from 'lodash';
+import {get, isArray, isPlainObject, mapValues, merge, pick, set} from 'lodash';
 import {
   callNativeMarkAsFunction,
   cloneAbstractControl,
@@ -87,35 +87,43 @@ export class NaoFormGroup<T = any> extends FormGroup {
 
     // -->Iterate: over messages
     if (Array.isArray(data?.messages) && data?.messages?.length) {
-      // -->Group: the messages based on data pointer
-      let messagesGrouped: { dataPointer: string, messages: NaoMessageNamespace.NaoMessage[] }[] =
-        map(groupBy(data.messages, 'dataPointer'), (value, key) => ({
-          dataPointer: key,
-          messages: value || []
-        }));
+      /**
+       * Set: messages to the current control
+       */
+        // -->Get: messages for current control
+      const currentControlMessages = data.messages.filter(f => !f.dataPointer);
+      if (currentControlMessages.length) {
+        // -->Set: the message to this control
+        this.naoMessages$.next([...this.naoMessages$.getValue(), ...currentControlMessages.map(f => {
+          delete f.dataPointer;
+          return f;
+        })]);
+      }
 
+      /**
+       * Set: messages to the children controls
+       */
+        // -->Get: messages for children controls
+      const childrenControlsMessages = data.messages.filter(f => !!f.dataPointer);
+      if (childrenControlsMessages.length) {
 
-      messagesGrouped.map((el) => {
-        // -->Clear: data pointers from messages
-        const messages = el.messages?.map((item) => {
-          delete item.dataPointer;
-          return item;
-        }) || [];
+        // -->Group: messages by merging the arrays
+        const groupedMessages = NaoMessageNamespace.groupNaoMessagesByDataPointer(childrenControlsMessages);
 
-        if (!el?.dataPointer) {
-          // -->Set: the message to this
-          this.naoMessages$.next([...this.naoMessages$.getValue(), ...messages]);
-        } else {
-
-          // -->Get: abstract control
-          const abstractControl = this.get(el?.dataPointer);
-          // -->Check: type
-          if (abstractControl instanceof NaoFormGroup || abstractControl instanceof NaoFormArray || abstractControl instanceof NaoFormControl) {
-            // -->Clear: data pointer from messages
-            abstractControl.setNaoMessages({ messages, options });
+        // -->Iterate: over grouped messages
+        groupedMessages.map(el => {
+          if (el?.dataPointer) {
+            // -->Get: abstract control
+            const abstractControl = this.get(el?.dataPointer);
+            // -->Check: type
+            if (abstractControl instanceof NaoFormGroup || abstractControl instanceof NaoFormArray || abstractControl instanceof NaoFormControl) {
+              // -->Clear: data pointer from messages
+              abstractControl.setNaoMessages({messages: el.messages, options});
+            }
           }
-        }
-      });
+        })
+
+      }
     }
 
     return this;
