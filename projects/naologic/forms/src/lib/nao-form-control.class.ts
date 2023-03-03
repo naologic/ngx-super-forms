@@ -3,10 +3,18 @@ import {AsyncValidatorFn, ValidatorFn} from '@angular/forms';
 import {NaoFormOptions} from './nao-form-options';
 import {cloneAbstractControl, NaoFormStatic} from './nao-form-static.class';
 import {BehaviorSubject} from 'rxjs';
-import {isPlainObject, pick, merge, map, groupBy, get} from 'lodash';
+import {isPlainObject, pick, merge} from 'lodash';
 import {NaoMessageNamespace} from "./nao-form.interface";
+import {generateRandomHash} from "./nao-utils.static";
 
 export class NaoFormControl extends FormControl {
+  /**
+   * Unique Id
+   */
+  public readonly id: string;
+  /**
+   * Meta data
+   */
   public metadata$ = new BehaviorSubject<any>(null);
   /**
    * Nao messages
@@ -20,6 +28,8 @@ export class NaoFormControl extends FormControl {
     meta?: any
   ) {
     super(formState, options, asyncValidator);
+    // -->Set: id
+    this.id = generateRandomHash(12);
     // -->Set: meta
     if (meta) {
       this.setMetadata(meta);
