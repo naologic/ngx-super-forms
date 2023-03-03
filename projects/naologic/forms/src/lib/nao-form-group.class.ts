@@ -11,9 +11,17 @@ import {NaoFormOptions} from './nao-form-options';
 import {NaoAbstractControlOptions, NaoMessageNamespace} from './nao-form.interface';
 import {NaoFormControl} from './nao-form-control.class';
 import {BehaviorSubject} from 'rxjs';
+import {generateRandomHash} from "./nao-utils.static";
 
 
 export class NaoFormGroup<T = any> extends FormGroup {
+  /**
+   * Unique Id
+   */
+  public readonly id: string;
+  /**
+   * Meta data
+   */
   public metadata$ = new BehaviorSubject<any>(null);
   private schema: any;
   private formData: {
@@ -31,6 +39,8 @@ export class NaoFormGroup<T = any> extends FormGroup {
     meta?: any
   ) {
     super(controls, options, asyncValidator);
+    // -->Set: id
+    this.id = generateRandomHash(12);
     // -->Set: meta
     if (meta) {
       this.setMetadata(meta);

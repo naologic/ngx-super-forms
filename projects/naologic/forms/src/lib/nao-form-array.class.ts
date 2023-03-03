@@ -11,9 +11,17 @@ import {NaoAbstractControlOptions, NaoMessageNamespace} from './nao-form.interfa
 import {NaoFormControl} from './nao-form-control.class';
 import {isPlainObject, merge, pick} from 'lodash';
 import {BehaviorSubject} from 'rxjs';
+import {generateRandomHash} from "./nao-utils.static";
 
 
 export class NaoFormArray<T = any> extends FormArray {
+  /**
+   * Unique Id
+   */
+  public readonly id: string;
+  /**
+   * Meta data
+   */
   public metadata$ = new BehaviorSubject<any>(null);
   /**
    * Nao messages
@@ -27,6 +35,8 @@ export class NaoFormArray<T = any> extends FormArray {
     meta?: any
   ) {
     super(controls, options, asyncValidator);
+    // -->Set: id
+    this.id = generateRandomHash(12);
     // -->Set: meta
     if (meta) {
       this.setMetadata(meta);
