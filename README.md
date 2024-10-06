@@ -29,14 +29,18 @@ Files to modify
 
 And increment the version. An existing version cannot be deployed to NPM and the package manager will reject it. 
 Commit to git.
+Create a new release version tagged with the same
 
-Publishing is done automatically when you create a new release or you can do it manually:
-
-
-
+Manual publishing:
 ```bash
-npm run publish:forms
+npm run publish:forms && npm run publish:pipes
 ```
+
+
+::: error
+Because of the outdated lodash package the Github Actions CI cannot deploy automatically to NPM even though it is correctly configured. Use manual deployment for that
+:::
+
 
 ### License
 ![GitHub](https://img.shields.io/github/license/mashape/apistatus.svg)
