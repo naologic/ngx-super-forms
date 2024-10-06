@@ -21,7 +21,18 @@ npm install --save @naologic/forms @naologic/pipes
 ```
 
 ### Publish
+Increment the version of both packages based on the packages.json version. Keep them in sync. 
+Files to modify
+1. packages.json
+2. projects/naologic/forms/packages.json
+3. projects/naologic/pipes/packages.json
+
+And increment the version. An existing version cannot be deployed to NPM and the package manager will reject it. 
+Commit to git.
+
 Publishing is done automatically when you create a new release or you can do it manually:
+
+
 
 ```bash
 npm run publish:forms
