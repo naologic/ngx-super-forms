@@ -90,17 +90,17 @@ export class NaoValidators {
    * Validator to check if string is email
    */
   public static isEmail(control: AbstractControl): { [key: string]: boolean } | null {
-    if (control.pristine || typeof control.value !== 'string') {
+    if (control.pristine || typeof control.value !== 'string' || !control.value) {
       return null;
     }
-
+  
     control.markAsTouched();
-
+  
     const EmailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
     if (EmailRegex.test(control.value.toLowerCase())) {
       return null;
     }
-
+  
     return { isEmail: false };
   }
 
