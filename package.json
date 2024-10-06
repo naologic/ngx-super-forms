@@ -1,10 +1,10 @@
 {
   "name": "@naologic/forms",
-  "version": "3.2.2",
+  "version": "3.2.4",
   "description": "A collection of Nao public libraries",
   "author": "Gabriel",
   "url": "https://naologic.com",
-  "copyright": "Copyright 2021 NaoLogic",
+  "copyright": "Copyright 2024 NaoLogic",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
